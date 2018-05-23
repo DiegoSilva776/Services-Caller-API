@@ -20,27 +20,32 @@ class PingController():
 
     def pingServices(self):
         urls = [
-            "fiocruz-app-oeds-api-dev.herokuapp.com"
+            "fiocruz-app-oeds-api-dev.herokuapp.com",
+            "services-caller.herokuapp.com"
         ]
 
         try:
+            i = 1
+            while i == 1:
 
-            for url in urls:
-                # Make a request to get the HTML which contains the list of Cities of SIOPS
-                headers = {
-                    'cache-control': "no-cache"
-                }
-                conn = http.client.HTTPConnection(url)
-                conn.request('GET', "", headers = headers)
+                for url in urls:
+                    # Make a request to get the HTML which contains the list of Cities of SIOPS
+                    headers = {
+                        'cache-control': "no-cache"
+                    }
+                    conn = http.client.HTTPConnection(url)
+                    conn.request('GET', "", headers = headers)
 
-                # Process the response
-                res = conn.getresponse()
-                data = res.read()
-                text = data.decode(self.netUtils.SIOPS_RESPONSE_DATA_DECODER)
+                    # Process the response
+                    res = conn.getresponse()
+                    data = res.read()
+                    text = data.decode(self.netUtils.SIOPS_RESPONSE_DATA_DECODER)
 
-                print("response: {0}".format(text))
+                    print("response: {0}".format(text))
 
-            time.sleep(120)
+                print("\n")
+
+                time.sleep(3)
 
         except urllib.error.HTTPError:
             print("Failed to pingService")
