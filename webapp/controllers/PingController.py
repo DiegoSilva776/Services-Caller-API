@@ -20,8 +20,7 @@ class PingController():
 
     def pingServices(self):
         urls = [
-            "fiocruz-app-oeds-api-dev.herokuapp.com",
-            "services-caller.herokuapp.com"
+            "fiocruz-app-oeds-api-dev.herokuapp.com"
         ]
 
         try:
@@ -45,7 +44,7 @@ class PingController():
 
                 print("\n")
 
-                time.sleep(3)
+                time.sleep(60)
 
         except urllib.error.HTTPError:
             print("Failed to pingService")
