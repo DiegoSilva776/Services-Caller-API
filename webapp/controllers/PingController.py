@@ -6,8 +6,7 @@ import http.client
 import urllib
 import json
 
-from bs4 import BeautifulSoup
-
+from requests_futures.sessions import FuturesSession
 from utils.NetworkingUtils import NetworkingUtils
 from utils.Logger import Logger
 
@@ -21,34 +20,28 @@ class PingController():
 
         self.netUtils = NetworkingUtils()
         self.logUtils = Logger()
+        self.session = FuturesSession()
 
     '''
         Make a request to verify if all the listed services are up and running
     '''
-    def pingServices(self):
+    def pingServices(self, key):
+        response = {
+            "msg" : "Failed to ping services"
+        }
+
         try:
 
-            for service in self.netUtils.SERVICES:
-                service.status = False
-                service.msg = ""
+            if key == self.netUtils.key:
 
-                # Make a request to get the HTML which contains the list of Cities of SIOPS
-                conn = http.client.HTTPConnection(service.url)
-                conn.request('GET', "", headers={
-                    'cache-control': "no-cache"
-                })
+                for service in self.netUtils.services:
+                    self.session.get(service.url, background_callback=self.parseAsyncResponse)
 
-                # Process the response
-                res = conn.getresponse()
-                data = res.read()
-                service.msg = data.decode(self.netUtils.ISO_DATA_DECODER)
+                    service.status = False
+                    service.msg = ""
 
-                if service.msg is not None:
-
-                    if self.netUtils.MANDATORY_TERM_SUCCESS_STATUS_RESPONSE in service.msg:
-                        service.status = True
-
-                service.verifiedAt = self.logUtils.get_utc_iso_timestamp()
+            else:
+                response["msg"] = "{0}{1}".format(response["msg"], "Invalid key.")
 
         except urllib.error.HTTPError as httpe:
             print("{0}: Failed to pingService: {1}".format(self.TAG, httpe))
@@ -59,23 +52,48 @@ class PingController():
         return "The pingServices process finished at {0}".format(datetime.datetime.utcnow())
 
     '''
+        Process the response of the async request that was sent to the urls
+    '''
+    def parseAsyncResponse(self, session, response):
+
+        if response is not None:
+
+            if response.url is not None and response.content is not None:
+                service = self.netUtils.getServiceByUrl(response.url)
+
+                if service is not None:
+                    service.msg = response.content.decode(self.netUtils.UTF8_DECODER)
+
+                    if self.netUtils.MANDATORY_TERM_SUCCESS_STATUS_RESPONSE in service.msg:
+                        service.status = True
+
+                    service.verifiedAt = self.logUtils.get_utc_iso_timestamp()
+
+                    print("\n{0}".format(json.dumps(service.getSerializable())))
+
+    '''
         Return a list o the services with information about their current status and the last 
         time this controller tried to call them
     '''
-    def returnStatusServices(self):
+    def returnStatusServices(self, key):
         response = {
-            "msg" : "{0} Failed to return the status of the services".format(self.TAG),
+            "msg" : "Failed to return the status of the services",
             "status_services" : []
         }
 
         try:
 
-            for service in self.netUtils.SERVICES:
-                response["status_services"].append(service.getSerializable())
+            if key == self.netUtils.key:
 
-            response["msg"] = "Here is the status of the services listed in the configuration file."
+                for service in self.netUtils.services:
+                    response["status_services"].append(service.getSerializable())
+
+                response["msg"] = "Here is the status of the services listed in the configuration file."
+
+            else:
+                response["msg"] = "{0}{1}".format(response["msg"], "Invalid key.")
 
         except Exception as e:
-            response["msg"] = "{0} Failed to returnStatusServices : {1}".format(self.TAG, e)
+            print("{0}: Failed to returnStatusServices: {1}".format(self.TAG, e))
 
         return json.dumps(response)

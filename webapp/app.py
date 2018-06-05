@@ -5,9 +5,7 @@ import os
 from flask import Flask
 from flask import request
 
-from celery import Celery
 from werkzeug.serving import WSGIRequestHandler
-
 from controllers.PingController import PingController
 
 # Construction
@@ -22,18 +20,22 @@ def index():
 @app.route('/start/')
 def startCallingServices():
     try:
-        return pingController.pingServices()
+        key = request.headers.get("key")
+        return pingController.pingServices(key)
 
-    except ValueError:
-        return 'Failed to startCallingServices'
+    except ValueError as e:
+        return 'Failed to startCallingServices {0}'.format(e)
+
+    return "Started routine to call listed services"
 
 @app.route('/status/')
 def returnStatusServices():
     try:
-        return pingController.returnStatusServices()
+        key = request.headers.get("key")
+        return pingController.returnStatusServices(key)
 
-    except ValueError:
-        return 'Failed to returnStatusServices'
+    except ValueError as e:
+        return 'Failed to returnStatusServices {0}'.format(e)
 
 # Initilization
 if __name__ == '__main__':
