@@ -27,33 +27,28 @@ class PingController():
     '''
     def pingServices(self):
         try:
-            i = 1
 
-            while i == 1:
+            for service in self.netUtils.SERVICES:
+                service.status = False
+                service.msg = ""
 
-                for service in self.netUtils.SERVICES:
-                    service.status = False
-                    service.msg = ""
+                # Make a request to get the HTML which contains the list of Cities of SIOPS
+                conn = http.client.HTTPConnection(service.url)
+                conn.request('GET', "", headers={
+                    'cache-control': "no-cache"
+                })
 
-                    # Make a request to get the HTML which contains the list of Cities of SIOPS
-                    conn = http.client.HTTPConnection(service.url)
-                    conn.request('GET', "", headers={
-                        'cache-control': "no-cache"
-                    })
+                # Process the response
+                res = conn.getresponse()
+                data = res.read()
+                service.msg = data.decode(self.netUtils.ISO_DATA_DECODER)
 
-                    # Process the response
-                    res = conn.getresponse()
-                    data = res.read()
-                    service.msg = data.decode(self.netUtils.ISO_DATA_DECODER)
+                if service.msg is not None:
 
-                    if service.msg is not None:
+                    if self.netUtils.MANDATORY_TERM_SUCCESS_STATUS_RESPONSE in service.msg:
+                        service.status = True
 
-                        if self.netUtils.MANDATORY_TERM_SUCCESS_STATUS_RESPONSE in service.msg:
-                            service.status = True
-
-                    service.verifiedAt = self.logUtils.get_utc_iso_timestamp()
-
-                time.sleep(self.netUtils.TIMEOUT_CALL_SERVICE)
+                service.verifiedAt = self.logUtils.get_utc_iso_timestamp()
 
         except urllib.error.HTTPError as httpe:
             print("{0}: Failed to pingService: {1}".format(self.TAG, httpe))
