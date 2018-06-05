@@ -35,8 +35,6 @@ def returnStatusServices():
     except ValueError:
         return 'Failed to returnStatusServices'
 
-    return 'Started ServicesCaller API v0.0.1'
-
 # Initilization
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
