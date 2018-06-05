@@ -12,26 +12,31 @@ from controllers.PingController import PingController
 
 # Construction
 app = Flask(__name__)
+pingController = PingController()
 
 # Routing
 @app.route('/')
-def hello():
-    return 'ServicesCaller API'
+def index():
+    return 'Started ServicesCaller API v0.0.2'
 
-'''
-    Endpoints used to scrap data from SIOPS and feed the database.
-'''
-@app.route('/ping_listed_services/')
-def pingListedService():
+@app.route('/start/')
+def startCallingServices():
     try:
-        pingController = PingController()
         return pingController.pingServices()
 
     except ValueError:
-        return 'Failed to pingListedService'
+        return 'Failed to startCallingServices'
 
-'''
-    Initilization
-'''
+@app.route('/status/')
+def returnStatusServices():
+    try:
+        return pingController.returnStatusServices()
+
+    except ValueError:
+        return 'Failed to returnStatusServices'
+
+    return 'Started ServicesCaller API v0.0.1'
+
+# Initilization
 if __name__ == '__main__':
     app.run(host='0.0.0.0')

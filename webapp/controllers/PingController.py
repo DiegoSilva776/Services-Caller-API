@@ -9,6 +9,7 @@ import json
 from bs4 import BeautifulSoup
 
 from utils.NetworkingUtils import NetworkingUtils
+from utils.Logger import Logger
 
 '''
     Make requests to the services
@@ -16,42 +17,70 @@ from utils.NetworkingUtils import NetworkingUtils
 class PingController():
 
     def __init__(self):
+        self.TAG = "PingController"
+
         self.netUtils = NetworkingUtils()
+        self.logUtils = Logger()
 
+    '''
+        Make a request to verify if all the listed services are up and running
+    '''
     def pingServices(self):
-        urls = [
-            "fiocruz-app-oeds-api-dev.herokuapp.com"
-        ]
-
         try:
             i = 1
+
             while i == 1:
 
-                for url in urls:
+                for service in self.netUtils.SERVICES:
+                    service.status = False
+                    service.msg = ""
+
                     # Make a request to get the HTML which contains the list of Cities of SIOPS
-                    headers = {
+                    conn = http.client.HTTPConnection(service.url)
+                    conn.request('GET', "", headers={
                         'cache-control': "no-cache"
-                    }
-                    conn = http.client.HTTPConnection(url)
-                    conn.request('GET', "", headers = headers)
+                    })
 
                     # Process the response
                     res = conn.getresponse()
                     data = res.read()
-                    text = data.decode(self.netUtils.SIOPS_RESPONSE_DATA_DECODER)
+                    service.msg = data.decode(self.netUtils.ISO_DATA_DECODER)
 
-                    print("response: {0}".format(text))
+                    if service.msg is not None:
 
-                print("\n")
+                        if self.netUtils.MANDATORY_TERM_SUCCESS_STATUS_RESPONSE in service.msg:
+                            service.status = True
 
-                time.sleep(60)
+                    service.verifiedAt = self.logUtils.get_utc_iso_timestamp()
 
-        except urllib.error.HTTPError:
-            print("Failed to pingService")
+                time.sleep(self.netUtils.TIMEOUT_CALL_SERVICE)
 
-        except urllib.error.URLError:
-            print("Failed to pingService")
+        except urllib.error.HTTPError as httpe:
+            print("{0}: Failed to pingService: {1}".format(self.TAG, httpe))
 
-        finally:
+        except urllib.error.URLError as urle:
+            print("{0}: Failed to pingService: {1}".format(self.TAG, urle))
 
-            return ""
+        return "The pingServices process finished at {0}".format(datetime.datetime.utcnow())
+
+    '''
+        Return a list o the services with information about their current status and the last 
+        time this controller tried to call them
+    '''
+    def returnStatusServices(self):
+        response = {
+            "msg" : "{0} Failed to return the status of the services".format(self.TAG),
+            "status_services" : []
+        }
+
+        try:
+
+            for service in self.netUtils.SERVICES:
+                response["status_services"].append(service.getSerializable())
+
+            response["msg"] = "Here is the status of the services listed in the configuration file."
+
+        except Exception as e:
+            response["msg"] = "{0} Failed to returnStatusServices : {1}".format(self.TAG, e)
+
+        return json.dumps(response)
