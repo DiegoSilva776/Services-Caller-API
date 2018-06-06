@@ -20,7 +20,7 @@ def index():
 @app.route('/start/')
 def startCallingServices():
     try:
-        key = request.headers.get("key")
+        key = request.args.get("key")
         return pingController.pingServices(key)
 
     except ValueError as e:
@@ -31,7 +31,7 @@ def startCallingServices():
 @app.route('/status/')
 def returnStatusServices():
     try:
-        key = request.headers.get("key")
+        key = request.args.get("key")
         return pingController.returnStatusServices(key)
 
     except ValueError as e:

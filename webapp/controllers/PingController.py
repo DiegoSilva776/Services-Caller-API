@@ -84,6 +84,7 @@ class PingController():
         try:
 
             if key == self.netUtils.key:
+                print("The key is valid. Starting to make requests ...")
 
                 for service in self.netUtils.services:
                     response["status_services"].append(service.getSerializable())
@@ -91,7 +92,7 @@ class PingController():
                 response["msg"] = "Here is the status of the services listed in the configuration file."
 
             else:
-                response["msg"] = "{0}{1}".format(response["msg"], "Invalid key.")
+                response["msg"] = "{0}. {1}".format(response["msg"], "Invalid key.")
 
         except Exception as e:
             print("{0}: Failed to returnStatusServices: {1}".format(self.TAG, e))
